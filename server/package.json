@@ -1,0 +1,27 @@
+
+{
+  "name": "ssl-certificate-server",
+  "version": "1.0.0",
+  "description": "Production SSL Certificate Generation Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "echo 'No build step required'",
+    "test": "echo 'Tests not implemented yet'"
+  },
+  "dependencies": {
+    "acme-client": "^5.4.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": ["ssl", "certificate", "letsencrypt", "acme"],
+  "author": "SSL Certificate Generator",
+  "license": "MIT"
+}
