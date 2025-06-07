@@ -20,9 +20,8 @@ interface CertificateResponse {
   expiryDate: string;
 }
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-domain.com' 
-  : 'http://localhost:3001';
+// Use window.location.origin to dynamically determine the API base URL
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `${window.location.origin}`;
 
 class CertificateService {
   async requestCertificate(request: CertificateRequest): Promise<{
@@ -31,6 +30,7 @@ class CertificateService {
     requestId: string;
   }> {
     console.log('Requesting certificate from backend:', request);
+    console.log('Using API URL:', `${API_BASE_URL}/api/certificates/request`);
     
     const response = await fetch(`${API_BASE_URL}/api/certificates/request`, {
       method: 'POST',

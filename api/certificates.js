@@ -2,11 +2,8 @@
 const express = require('express');
 const acme = require('acme-client');
 const crypto = require('crypto');
-const cors = require('cors');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const router = express.Router();
 
 // In-memory storage for demonstration (use Redis or database in production)
 const requestStore = new Map();
@@ -22,7 +19,7 @@ let accountKey;
   accountKey = await acme.crypto.createPrivateKey();
 })();
 
-app.post('/api/certificates/request', async (req, res) => {
+router.post('/certificates/request', async (req, res) => {
   try {
     const { domain, email, validationType } = req.body;
     
@@ -48,26 +45,29 @@ app.post('/api/certificates/request', async (req, res) => {
     // Create CSR
     const [key, csr] = await acme.crypto.createCsr({
       commonName: domain,
-      altNames: domain.startsWith('*.') ? [domain] : undefined
     });
 
-    // Create order
+    // Initialize order
     const order = await client.createOrder({
       identifiers: [
-        { type: 'dns', value: domain.startsWith('*.') ? domain.substring(2) : domain }
+        { type: 'dns', value: domain }
       ]
     });
 
-    // Get authorization
+    // Get authorizations
     const authorizations = await client.getAuthorizations(order);
     const authorization = authorizations[0];
-    
-    // Find the appropriate challenge
-    const challengeType = validationType === 'dns' ? 'dns-01' : 'http-01';
-    const challenge = authorization.challenges.find(c => c.type === challengeType);
-    
+
+    // Get HTTP challenge
+    let challenge;
+    if (validationType === 'http') {
+      challenge = authorization.challenges.find(c => c.type === 'http-01');
+    } else {
+      challenge = authorization.challenges.find(c => c.type === 'dns-01');
+    }
+
     if (!challenge) {
-      return res.status(400).json({ error: `${challengeType} challenge not available` });
+      return res.status(400).json({ error: `No ${validationType} challenge found` });
     }
 
     // Get key authorization
@@ -77,34 +77,34 @@ app.post('/api/certificates/request', async (req, res) => {
     requestStore.set(requestId, {
       domain,
       email,
-      client,
       order,
+      authorization,
       challenge,
+      keyAuthorization,
       key,
       csr,
-      keyAuthorization,
-      status: 'pending'
+      client
     });
 
+    // Return validation info
     res.json({
       requestId,
       validationRequired: true,
       validation: {
         domain,
-        type: challengeType,
+        type: challenge.type,
         token: challenge.token,
         keyAuthorization,
         url: challenge.url
       }
     });
-
   } catch (error) {
     console.error('Certificate request error:', error);
     res.status(500).json({ error: 'Failed to request certificate' });
   }
 });
 
-app.post('/api/certificates/validate/:requestId', async (req, res) => {
+router.post('/certificates/validate/:requestId', async (req, res) => {
   try {
     const { requestId } = req.params;
     const requestData = requestStore.get(requestId);
@@ -113,54 +113,82 @@ app.post('/api/certificates/validate/:requestId', async (req, res) => {
       return res.status(404).json({ error: 'Request not found' });
     }
 
-    const { client, challenge } = requestData;
+    const { client, challenge, domain, authorization } = requestData;
 
-    // Verify challenge
-    await client.verifyChallenge(challenge, challenge.keyAuthorization);
-    
+    // Wait for the challenge file to be accessible
+    const maxAttempts = 5;
+    let attempts = 0;
+    let verificationSuccess = false;
+
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`Attempt ${attempts + 1}: Verifying challenge for ${domain}...`);
+        // Verify the challenge is ready
+        await client.verifyChallenge(challenge);
+        verificationSuccess = true;
+        break;
+      } catch (error) {
+        console.log(`Verification attempt ${attempts + 1} failed:`, error.message);
+        attempts++;
+        if (attempts < maxAttempts) {
+          // Wait 2 seconds before next attempt
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+
+    if (!verificationSuccess) {
+      throw new Error('Challenge verification failed after multiple attempts');
+    }
+
     // Complete challenge
     await client.completeChallenge(challenge);
     
-    requestData.status = 'validating';
-    requestStore.set(requestId, requestData);
+    // Wait for validation
+    await client.waitForValidStatus(challenge);
 
-    res.json({ success: true });
-
+    res.json({ status: 'validating' });
   } catch (error) {
     console.error('Validation error:', error);
-    res.status(500).json({ error: 'Failed to validate domain' });
+    res.status(500).json({ error: error.message || 'Failed to validate domain' });
   }
 });
 
-app.get('/api/certificates/status/:requestId', async (req, res) => {
+router.get('/certificates/status/:requestId', async (req, res) => {
   try {
     const { requestId } = req.params;
     const requestData = requestStore.get(requestId);
-    
+
     if (!requestData) {
       return res.status(404).json({ error: 'Request not found' });
     }
 
-    const { client, order, key, csr } = requestData;
+    const { order, client, key, csr } = requestData;
 
     // Check order status
     const updatedOrder = await client.getOrder(order);
-    
-    if (updatedOrder.status === 'valid') {
-      // Generate certificate
-      const cert = await client.finalizeOrder(updatedOrder, csr);
-      const certificate = cert.toString();
+
+    if (updatedOrder.status === 'ready') {
+      // Finalize order
+      await client.finalizeOrder(order, csr);
+      res.json({ status: 'processing' });
+    } else if (updatedOrder.status === 'valid') {
+      // Get certificate
+      const certificate = await client.getCertificate(order);
+      
+      // Convert key to PEM format
       const privateKey = key.toString();
       
-      // Get certificate chain
-      const chain = await client.getCertificateChain(updatedOrder);
+      // Extract chain certificates
+      const chain = certificate.split('-----END CERTIFICATE-----')
+        .filter(cert => cert.trim().length > 0)
+        .map(cert => cert.trim() + '-----END CERTIFICATE-----')
+        .slice(1)
+        .join('\n');
       
-      // Calculate expiry date (Let's Encrypt certs are valid for 90 days)
+      // Calculate expiry date (90 days from now)
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 90);
-
-      // Clean up
-      requestStore.delete(requestId);
 
       res.json({
         status: 'valid',
@@ -183,9 +211,4 @@ app.get('/api/certificates/status/:requestId', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Certificate API server running on port ${PORT}`);
-});
-
-module.exports = app;
+module.exports = router;

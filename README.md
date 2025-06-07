@@ -1,73 +1,112 @@
-# Welcome to your Lovable project
+# SSL Certificate Generator
 
-## Project info
+A modern web application for generating SSL certificates using Let's Encrypt ACME protocol. Built with React, TypeScript, and Node.js.
 
-**URL**: https://lovable.dev/projects/948e0f7b-cf5b-4fc8-a151-f3e73a0b2fbe
+## Features
 
-## How can I edit this code?
+- Generate SSL certificates for domains and subdomains
+- Support for wildcard certificates
+- Multiple validation methods (DNS, HTTP, HTTPS)
+- Admin dashboard for monitoring and management
+- Real-time certificate generation status
+- Secure certificate storage
+- Modern, responsive UI
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend:**
+  - React
+  - TypeScript
+  - Vite
+  - Shadcn UI
+  - React Router
+  - React Query
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/948e0f7b-cf5b-4fc8-a151-f3e73a0b2fbe) and start prompting.
+- **Backend:**
+  - Node.js
+  - Express
+  - ACME Client
+  - PM2 (Production)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Prerequisites
 
-**Use your preferred IDE**
+- Node.js 16.x or higher
+- npm 7.x or higher
+- Git
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/ssl-certificate-generator.git
+   cd ssl-certificate-generator
+   ```
 
-Follow these steps:
+2. Install dependencies:
+   ```bash
+   # Install frontend dependencies
+   npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+   # Install backend dependencies
+   cd server
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. Set up environment variables:
+   ```bash
+   # In the server directory
+   cp .env.example .env
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. Start the development servers:
+   ```bash
+   # Start frontend (in project root)
+   npm run dev
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+   # Start backend (in server directory)
+   npm run dev
+   ```
+
+## Development
+
+- Frontend runs on: http://localhost:8080
+- Backend runs on: http://localhost:3001
+- Admin dashboard: http://localhost:8080/admin
+
+## Production Deployment
+
+See the deployment guides in the `deploy` directory:
+- [GCP Deployment Guide](deploy/gcp/README.md)
+- [Namecheap Deployment Guide](deploy/namecheap/README.md)
+
+## Project Structure
+
+```
+ssl-certificate-generator/
+├── src/                    # Frontend source code
+│   ├── components/        # React components
+│   ├── pages/            # Page components
+│   ├── api/              # API integration
+│   └── utils/            # Utility functions
+├── server/               # Backend source code
+│   ├── routes/          # API routes
+│   └── utils/           # Server utilities
+├── public/              # Static assets
+└── deploy/             # Deployment configurations
 ```
 
-**Edit a file directly in GitHub**
+## Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-**Use GitHub Codespaces**
+## License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## What technologies are used for this project?
+## Support
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/948e0f7b-cf5b-4fc8-a151-f3e73a0b2fbe) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For support, please open an issue in the GitHub repository or contact the maintainers.
