@@ -674,7 +674,7 @@ const Index = () => {
       {/* Buy Me a Coffee */}
       <div className="flex flex-col items-center mt-8 mb-3">
         <a 
-          href="https://www.buymeacoffee.com/instacert" 
+          href="https://coff.ee/abhishek.manjunath" 
           target="_blank" 
           rel="noopener noreferrer"
           className="transform hover:scale-105 transition-transform duration-200"
@@ -695,6 +695,12 @@ const Index = () => {
             <span>Total Certificates Issued: {certCount.toLocaleString()}</span>
           </span>
         </div>
+        <a 
+          href="/report-issue" 
+          className="text-green-600 hover:text-green-700 transition-colors duration-200"
+        >
+          Report an Issue
+        </a>
         <span>© {new Date().getFullYear()} InstaCerts.com - All rights reserved</span>
       </div>
     </div>

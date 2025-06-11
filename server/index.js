@@ -455,6 +455,26 @@ const adminCredentials = {
   token: 'admin-token-123' // Default token
 };
 
+// Simple admin auth middleware
+const adminAuth = (req, res, next) => {
+  console.log('Checking admin auth');
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('No auth header or invalid format');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  console.log('Received token:', token);
+  if (token !== adminCredentials.token) {
+    console.log('Invalid token');
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  console.log('Auth successful');
+  next();
+};
+
 // Admin routes
 app.post('/api/admin/login', (req, res) => {
   const { passcode } = req.body;
@@ -493,26 +513,6 @@ app.post('/api/admin/change-passcode', adminAuth, (req, res) => {
     res.status(500).json({ error: 'Failed to update passcode' });
   }
 });
-
-// Simple admin auth middleware
-const adminAuth = (req, res, next) => {
-  console.log('Checking admin auth');
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('No auth header or invalid format');
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  console.log('Received token:', token);
-  if (token !== adminCredentials.token) {
-    console.log('Invalid token');
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-
-  console.log('Auth successful');
-  next();
-};
 
 app.get('/api/admin/stats', adminAuth, (req, res) => {
   resetDailyStats();
